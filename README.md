@@ -1,12 +1,13 @@
-# zgom
-Go marshaler for ZSON (demo)
+# zgom - Go marshaler for ZSON
 
-> TL;DR You can finally unmarshal Go interface types with ease using ZSON.
-> ZSON is a new dialect
-> of JSON, which embeds a comprehensive type system in a syntactically
-> friendly fashion.  When marshaling an interface value into ZSON, the
+> TL;DR You can finally unmarshal Go interface types with ease using
+> [ZSON](https://github.com/brimsec/zq/blob/master/zng/docs/zson.md).
+> ZSON is a new dialect > of JSON, which embeds a comprehensive
+> type system in a syntactically friendly fashion.
+  When marshaling an interface value into ZSON, the
 > type name of the interface's underlying implementation is reflected
-> into ZSON as a ZSON first-class type name.
+> into ZSON as a ZSON
+> [first-class type name](https://github.com/brimsec/zq/blob/master/zng/docs/zson.md#25-type-definitions).
 
 Have you ever gotten frustrated unmarshaling JSON into a Go interface value?
 Turns out you're not the only one!
@@ -25,8 +26,8 @@ Why is this?
 
 Let's look at a concrete example.  We'll follow the patterns used in
 [Greg Trowbridge's article](http://gregtrowbridge.com/golang-json-serialization-with-interfaces/)
- on this topic, where he first creates a Plant type and Animal type, which
- both implement a `ColoredThing` interface:
+on this topic, where he first creates a `Plant` type and an `Animal` type, which
+both implement a `ColoredThing` interface:
 ```
 type ColoredThing interface {  
     Color() string
@@ -59,7 +60,7 @@ You can try on this example
 [pre-loaded into the Go Playground](https://play.golang.org/p/9tBwzh2WTZm).
 Just hit the Run button.
 
-## Marshalin Interfaces
+## Marshaling Interfaces
 
 Okay, we successively marshaled a Go struct, but what about an inteface.
 Fortunately, the marshaling logic here will work just fine for a ColoredThing.
