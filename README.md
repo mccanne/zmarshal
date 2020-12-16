@@ -2,9 +2,9 @@
 
 > TL;DR You can finally unmarshal Go interface types with ease using
 > [ZSON](https://github.com/brimsec/zq/blob/master/zng/docs/zson.md).
-> ZSON is a new dialect > of JSON, which embeds a comprehensive
+> ZSON is a new dialect of JSON, which embeds a comprehensive
 > type system in a syntactically friendly fashion.
-  When marshaling an interface value into ZSON, the
+> When marshaling an interface value into ZSON, the
 > type name of the interface's underlying implementation is reflected
 > into ZSON as a ZSON
 > [first-class type name](https://github.com/brimsec/zq/blob/master/zng/docs/zson.md#25-type-definitions).
