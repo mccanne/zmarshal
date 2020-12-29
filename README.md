@@ -163,24 +163,31 @@ any serializable Go type and includes type definitions and first-class
 type values so it can carry the type names of Go values into its
 serialized form.
 
-Armed with ZSON, let's again serialize a flamingo and a rose
-([try it]([https://TBD)):
+Armed with ZSON, let's again serialize a flamingo and a rose.  This time
+we will use the sample code in
+[github.com/mccanne/zmarshal](http://github.com/mccanne/zmarshal) as it
+depends the external zson package not available in the Go playground.
+Assuming you have Go installed, you `go get github.com/mccanne/zmarshal`
+and this will pull in and build the demo code here called `zmarshal`.
+
+This snippet is from example 1 in `zmarshal`:
 ```
 rose := Make("rose")
 flamingo := Make("flamingo")
 m := zson.NewMarshaler()
-m.Decorate(zson.TypeSimple)
+m.Decorate(zson.StyleSimple)
 roseZSON, _ := m.Marshal(rose)
 fmt.Println(roseZSON)
 flamingoZSON, _ = m.Marshal(flamingo)
 fmt.Println(flamingoZSON)
 ```
-And now, we get this magical output:
+If you run `zmarshal 1`, you will get this magical output:
 ```
 {MyColor:"red"} (=Plant)
 {MyColor:"pink"} (=Animal)
 ```
-As you can see, the _planted-ness_ and _animal-ness_ is preserved!
+As you can see, the _planted-ness_ and _animal-ness_ of the `Thing` is
+noted in the output!
 
 The parenthesized strings at the end of each line are are called ZSON
 "type decorators".  ZSON has a full-fledged type system and these decorators
@@ -190,34 +197,81 @@ type values but there is nothing language-specific in the type name.  It can
 be any string, but it just so happens the Go marshaler chooses ZSON type names
 to match the Go types being serialized.
 
-Given the type information in the ZSON output, we should be unmarshal the
+Given the type information in the ZSON output, we should be able to unmarshal the
 ZSON back into an interface value, right?  There's one little twist.
 Because Go doesn't have a way to convert the name of type to a value of that
 type, you need to help out the ZSON unmarshaler by giving it a list
-of values that might be referenced in the ZSON using the `Bindings()`
+of values that might be referenced in the ZSON using the `Bind()`
 method on the unmarshaler.  Here's how this works
+```
+	u := zson.NewUnmarshaler()
+	u.Bind(Animal{}, Plant{})
+	var flamingo Thing
+	err := u.Unmarshal(flamingoZSON, &flamingo)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("The flamingo is " + flamingo.Color())
+	}
+```
+And, if you run this example via `zmarshal 2`, voila!  The concrete ZSON type
+was successfully marshaled into the interface variable the output here is:
+```
+The flamingo is pink
+```
+Just for good measure, you can see here that
+the type of concrete value is in fact correct with example 3:
 ([try it]([https://TBD)):
 ```
-u := zson.NewUnmarshaler()
-u.Bindings(Animal{}, Plant{})
-var flamingo ColoredThing
-err := json.Unmarshal(flamingoJSON, &flamingo)
-if err != nil {
-	fmt.Println(err)
-} else {
-	fmt.Println(flamingo.Color())
-}
+	_, ok := flamingo.(*Animal)
+	fmt.Printf("The flamingo is an Animal? %t\n", ok)
+``
+Running `zmarshal 3` outputs:
 ```
-And voila!  The concrete ZSON type was successfully marshaled into the
-interface variable.  Just for good measure, you can see here that
-the type of concrete value is in fact correct
-([try it]([https://TBD)):
-```
-_, ok := flamingo.(*Animal)
-fmt.Println(ok)
+The flamingo is an Animal? true
 ```
 
-TBD:
-* conflicting type names and `m.Decorate(zson.TypeFull)`
+### Custom Type Names
+
+You probably noticed in these examples, the ZSON marshaling used the exact
+same type names as the Go program.  This can create name conflicts since
+the same type name may appear in different Go packages (e.g., io.Writer and
+bufio.Writer).
+
+To cope with this, the ZSON marshaler let's you specify more detailed types by
+providing zson.TypeStyle to the marshaler's Decorate method.  You can use
+package names with `zson.StylePackage`, e.g., `zmarshal 4` will produce this
+output:
+```
+{MyColor: "red"} (=main.Plant)
+{MyColor: "pink"} (=main.Animal)
+```
+Type names can also be extended to include the full important path using
+`zson.StyleFull` and even include version numbers in the type path to provide
+a mechanism for versioning the "schema" of these serialized messages.
+For example, `zmarshal 5` utilizes the `NamedBindings` method on the marshaler
+to establish a binding between the chosen type name and the Go data structure:
+```
+	rose := Make("rose")
+	flamingo := Make("flamingo")
+	m := zson.NewMarshaler()
+	m.NamedBindings([]resolver.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
+	roseZSON, _ := m.Marshal(rose)
+	fmt.Println(roseZSON)
+	flamingoZSON, _ := m.Marshal(flamingo)
+	fmt.Println(flamingoZSON)
+```
+and produces this output:
+```
+{MyColor: "red"} (=Plant.v0)
+{MyColor: "pink"} (=Animal.v0)
+```
+Then down the road, as you enhanced the Animal and Plant types,
+you could imagine unmarshaling multiple versions of the Thing,
+with different ZSON version numbers,
+format into different concrete types all behind a single Go interface value.
+
+## Wrapping Up
+
 * streams of marshaled values (e.g., logs as opposed to config or app state)
 * if you have streams of data, you can search and analyze them with `zq`
