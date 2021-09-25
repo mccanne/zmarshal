@@ -20,7 +20,7 @@ like most of us, and you find Go interfaces a challenge to marshal, please read 
 
 While the Go json.Marshal function does a wonderful job marshaling interface
 values into JSON, there is an odd asymmetry when it comes to unmarshaling the
-very same data back into they very same interface value.
+very same data back into the very same interface value.
 
 Why is this?
 
