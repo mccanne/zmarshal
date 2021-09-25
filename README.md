@@ -225,7 +225,7 @@ the type of concrete value is in fact correct with example 3:
 ```
 	_, ok := flamingo.(*Animal)
 	fmt.Printf("The flamingo is an Animal? %t\n", ok)
-``
+```
 Running `zmarshal 3` outputs:
 ```
 The flamingo is an Animal? true
