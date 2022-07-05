@@ -160,7 +160,8 @@ What if there were a data format like JSON but it could reflect the
 Go types into its serialized representation so the _planted-ness_
 and _animal-ness_ from our example above could be handled automatically?
 
-It turns out there is new type of data called [super-structured data]()
+It turns out there is new type of data called
+[super-structured data](https://zed.brimdata.io/docs/formats/#2-zed-a-super-structured-pattern)
 that can carry the information needed to solve out problem here.
 
 We won't go into all the gory details of super-structured data
