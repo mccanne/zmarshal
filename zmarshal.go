@@ -5,8 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/brimsec/zq/zng/resolver"
-	"github.com/brimsec/zq/zson"
+	"github.com/brimdata/zed/zson"
 )
 
 type Thing interface {
@@ -95,7 +94,7 @@ func ex5() {
 	rose := Make("rose")
 	flamingo := Make("flamingo")
 	m := zson.NewMarshaler()
-	m.NamedBindings([]resolver.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
+	m.NamedBindings([]zson.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
 	roseZSON, _ := m.Marshal(rose)
 	fmt.Println(roseZSON)
 	flamingoZSON, _ := m.Marshal(flamingo)

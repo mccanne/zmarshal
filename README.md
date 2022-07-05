@@ -57,8 +57,10 @@ this is, of course, prints out
 {"MyColor":"green"}
 ```
 You can try on this example
-[pre-loaded into the Go Playground](https://play.golang.org/p/O2XS1_qAH5p).
+[pre-loaded into the Go Playground](https://go.dev/play/p/SEWJut0mCz-).
 Just hit the Run button.
+
+[ex1](https://go.dev/play/p/dYFPNbUANUV)
 
 ## Marshaling Interfaces
 
@@ -84,21 +86,21 @@ flamingoJSON, _ := json.Marshal(flamingo)
 fmt.Println(string(flamingoJSON))
 ```
 we'll get the following output
-[(try it)](https://play.golang.org/p/qz2hof1hpX1):
+[(try it)](https://go.dev/play/p/aioSK48Whoi):
 ```
 {"MyColor":"pink"}
 ```
 Perfect.  Go's json marshaler followed the interface value to its implementation
 and output exactly what we wanted.  Now, let's try to Unmarshal the JSON back
 into an interface type, e.g.,
-[(try it)](https://play.golang.org/p/WhXBW-MNFUZ):
+[(try it)](https://go.dev/play/p/_rjk7Uhi4I6):
 ```
-	var flamingo Thing
-	err := json.Unmarshal(flamingoJSON, &flamingo)
+	var thing Thing
+	err := json.Unmarshal(flamingoJSON, &thing)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(flamingo.Color())
+		fmt.Println(thing.Color())
 	}
 ```
 Oh no, we get an error that looks like this:
@@ -115,14 +117,15 @@ Trowbridge boils this down to a very simple observation: what if
 we looked at the two JSON serializations _from Go's perspective?_
 
 To do so, here is a snippet to serialize a flamingo and a rose
-[(try it)](https://play.golang.org/p/ko-7fJ_ngSH):
+[(try it)](https://go.dev/play/p/6SL21fiXuom):
 ```
-rose := Make("rose")
+rose := Make("plant", "red")
 roseJSON, _ := json.Marshal(rose)
 fmt.Println(string(roseJSON))
-flamingo := Make("flamingo")
-flamingoJSON, _ = json.Marshal(flamingo)
+flamingo := Make("animal", "pink")
+flamingoJSON, _ := json.Marshal(flamingo)
 fmt.Println(string(flamingoJSON))
+rose := Make("rose")
 ```
 And, we get this output:
 ```
@@ -132,7 +135,8 @@ And, we get this output:
 Now the problem starts to make sense!
 
 The JSON output here is exactly the same for the
-both the Plant and the Animal.  How is Go supposed to figure out which is which?
+both the `Plant` and the `Animal`.  How is Go supposed to figure out which is which?
+
 You might say, in this case, the compiler could look at the color strings in the
 value and figure out which struct to use because a rose is red and a flamingo is pink.
 Okay sure, but in general, there just isn't enough information here, as we could
@@ -142,9 +146,9 @@ exactly the same JSON in this example.
 The fundamental issue here is that neither the _planted-ness_ of the rose nor
 the _animal-ness_ of the flamingo made it into the JSON output.  Alas, you say,
 the solution is just a small matter of programming: add a plant/animal type field to the
-JSON output and you're golden.  In fact, Go's json package makes this approach
+JSON output and you're golden.  In fact, Go's `json` package makes this approach
 all quite feasible with its custom marshaler methods.  Trowbridge walks you through
-how to do this, and after a number of fairly mind-bending steps (especially if
+how to do this, and after a number of non-obvious steps (especially if
 you're new to Go) and a hundred or so lines of code, he declares victory
 at the end of the article: "YOU MADE IT!"
 
@@ -156,35 +160,36 @@ What if there were a data format like JSON but it could reflect the
 Go types into its serialized representation so the _planted-ness_
 and _animal-ness_ from our example above could be handled automatically?
 
-It turns out there is brand new format called ZSON that does just this.
-We won't go into all the gory details of ZSON but suffice it to say that
-ZSON provides a comprehensive type system that can reliably represent
-any serializable Go type and includes type definitions and first-class
+It turns out there is new type of data called [super-structured data]()
+that can carry the information needed to solve out problem here.
+
+We won't go into all the gory details of super-structured data
+but suffice it to say that ZSON provides a comprehensive type system
+that can reliably represent any serializable Go type and includes type definitions and first-class
 type values so it can carry the type names of Go values into its
 serialized form.
 
-Armed with ZSON, let's again serialize a flamingo and a rose.  This time
-we will use the sample code in
-[github.com/mccanne/zmarshal](http://github.com/mccanne/zmarshal) as it
-depends the external zson package not available in the Go playground.
-Assuming you have Go installed, you `go get github.com/mccanne/zmarshal`
-and this will pull in and build the demo code here called `zmarshal`.
+We'll use the ZSON form of super-structured data.  ZSON is a superset of JSON
+so it will look familiar but it carries the full power of the super-structured
+data model.
 
-This snippet is from example 1 in `zmarshal`:
+Armed with ZSON, we can serialize the flamingo and rose with the
+super-structured type information
+[(try it)](https://go.dev/play/p/ZhC-vr7xm3X):
 ```
-rose := Make("rose")
-flamingo := Make("flamingo")
+rose := Make("plant", "red")
+flamingo := Make("animal", "pink")
 m := zson.NewMarshaler()
 m.Decorate(zson.StyleSimple)
 roseZSON, _ := m.Marshal(rose)
 fmt.Println(roseZSON)
-flamingoZSON, _ = m.Marshal(flamingo)
+flamingoZSON, _ := m.Marshal(flamingo)
 fmt.Println(flamingoZSON)
 ```
-If you run `zmarshal 1`, you will get this magical output:
+And, we get this output:
 ```
-{MyColor:"red"} (=Plant)
-{MyColor:"pink"} (=Animal)
+{MyColor:"red"}(=Plant)
+{MyColor:"pink"}(=Animal)
 ```
 As you can see, the _planted-ness_ and _animal-ness_ of the `Thing` is
 noted in the output!
@@ -203,32 +208,39 @@ Because Go doesn't have a way to convert the name of type to a value of that
 type, you need to help out the ZSON unmarshaler by giving it a list
 of values that might be referenced in the ZSON using the `Bind()`
 method on the unmarshaler.  Here's how this works
+[(try it)](https://go.dev/play/p/aZCw3R7W3lp):
 ```
-	u := zson.NewUnmarshaler()
-	u.Bind(Animal{}, Plant{})
-	var flamingo Thing
-	err := u.Unmarshal(flamingoZSON, &flamingo)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println("The flamingo is " + flamingo.Color())
-	}
+u := zson.NewUnmarshaler()
+u.Bind(Animal{}, Plant{})
+var thing Thing
+if err := u.Unmarshal(flamingoZSON, &thing); err != nil {
+	fmt.Println(err)
+} else {
+	fmt.Println("The flamingo is " + thing.Color())
+}
+if err := u.Unmarshal(roseZSON, &thing); err != nil {
+	fmt.Println(err)
+} else {
+	fmt.Println("The rose is " + thing.Color())
+}
 ```
-And, if you run this example via `zmarshal 2`, voila!  The concrete ZSON type
-was successfully marshaled into the interface variable the output here is:
+If you run this, you will see the serialized ZSON values
+are successfully marshaled into the interface variable with the correct
+underlying concrete types.  The output here is:
 ```
 The flamingo is pink
+The rose is red
 ```
 Just for good measure, you can see here that
-the type of concrete value is in fact correct with example 3:
-([try it]([https://TBD)):
+the type of concrete value is in fact correct
+([try it](https://go.dev/play/p/nq6k6n3EoNs)):
 ```
 	_, ok := flamingo.(*Animal)
-	fmt.Printf("The flamingo is an Animal? %t\n", ok)
+	fmt.Printf("Is the flamingo an Animal? %t\n", ok)
 ```
-Running `zmarshal 3` outputs:
+and the output is
 ```
-The flamingo is an Animal? true
+Is the flamingo an Animal? true
 ```
 
 ### Custom Type Names
@@ -243,19 +255,20 @@ providing zson.TypeStyle to the marshaler's Decorate method.  You can use
 package names with `zson.StylePackage`, e.g., `zmarshal 4` will produce this
 output:
 ```
-{MyColor: "red"} (=main.Plant)
-{MyColor: "pink"} (=main.Animal)
+{MyColor: "red"}(=main.Plant)
+{MyColor: "pink"}(=main.Animal)
 ```
 Type names can also be extended to include the full important path using
 `zson.StyleFull` and even include version numbers in the type path to provide
 a mechanism for versioning the "schema" of these serialized messages.
 For example, `zmarshal 5` utilizes the `NamedBindings` method on the marshaler
-to establish a binding between the chosen type name and the Go data structure:
+to establish a binding between the chosen type name and the Go data structure
+[try it](https://go.dev/play/p/QhyaT_lTM5B):
 ```
-	rose := Make("rose")
-	flamingo := Make("flamingo")
+	rose := Make("plant", "red")
+	flamingo := Make("animal", "pink")
 	m := zson.NewMarshaler()
-	m.NamedBindings([]resolver.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
+	m.NamedBindings([]zson.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
 	roseZSON, _ := m.Marshal(rose)
 	fmt.Println(roseZSON)
 	flamingoZSON, _ := m.Marshal(flamingo)
@@ -263,11 +276,11 @@ to establish a binding between the chosen type name and the Go data structure:
 ```
 and produces this output:
 ```
-{MyColor: "red"} (=Plant.v0)
-{MyColor: "pink"} (=Animal.v0)
+{MyColor:"red"}(=Plant.v0)
+{MyColor:"pink"}(=Animal.v0)
 ```
-Then down the road, as you enhanced the Animal and Plant types,
-you could imagine unmarshaling multiple versions of the Thing,
+Then down the road, as you enhanced the `Animal` and `Plant` types,
+you could imagine unmarshaling multiple versions of the `Thing`,
 with different ZSON version numbers,
 format into different concrete types all behind a single Go interface value.
 
