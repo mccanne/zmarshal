@@ -234,14 +234,14 @@ The rose is red
 ```
 Just for good measure, you can see here that
 the type of concrete value is in fact correct
-([try it](https://go.dev/play/p/nq6k6n3EoNs)):
+[(try it)](https://go.dev/play/p/kRhFWPs0umg):
 ```
-	_, ok := flamingo.(*Animal)
-	fmt.Printf("Is the flamingo an Animal? %t\n", ok)
+_, ok := thing.(*Animal)
+fmt.Printf("Is the thing an Animal? %t\n", ok)
 ```
 and the output is
 ```
-Is the flamingo an Animal? true
+Is the thing an Animal? true
 ```
 
 ### Custom Type Names
@@ -264,16 +264,16 @@ Type names can also be extended to include the full important path using
 a mechanism for versioning the "schema" of these serialized messages.
 For example, `zmarshal 5` utilizes the `NamedBindings` method on the marshaler
 to establish a binding between the chosen type name and the Go data structure
-[try it](https://go.dev/play/p/QhyaT_lTM5B):
+[(try it)](https://go.dev/play/p/QhyaT_lTM5B):
 ```
-	rose := Make("plant", "red")
-	flamingo := Make("animal", "pink")
-	m := zson.NewMarshaler()
-	m.NamedBindings([]zson.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
-	roseZSON, _ := m.Marshal(rose)
-	fmt.Println(roseZSON)
-	flamingoZSON, _ := m.Marshal(flamingo)
-	fmt.Println(flamingoZSON)
+rose := Make("plant", "red")
+flamingo := Make("animal", "pink")
+m := zson.NewMarshaler()
+m.NamedBindings([]zson.Binding{{"Plant.v0", Plant{}}, {"Animal.v0", Animal{}}})
+roseZSON, _ := m.Marshal(rose)
+fmt.Println(roseZSON)
+flamingoZSON, _ := m.Marshal(flamingo)
+fmt.Println(flamingoZSON)
 ```
 and produces this output:
 ```
